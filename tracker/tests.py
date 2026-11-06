@@ -68,3 +68,45 @@ class TrackerAPITests(APITestCase):
         self.assertEqual(data["applied"], 2)
         self.assertEqual(data["interview"], 1)
         self.assertEqual(data["total"], 3)
+
+class AnalyzeTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("analyst", password="Tracker!2026pass")
+        self.client.force_authenticate(self.user)
+
+    def set_skills(self, skills):
+        self.client.put("/api/profile/", {"skills": skills}, format="json")
+
+    def make_app(self, description):
+        response = self.client.post(
+            "/api/applications/",
+            {"company": "Acme", "role": "Backend Dev", "job_description": description},
+            format="json",
+        )
+        return response.data["id"]
+
+    def test_match_score(self):
+        self.set_skills("Python, Django, REST APIs, Git")
+        app_id = self.make_app("We need Python, Django, PostgreSQL and Docker experience.")
+        data = self.client.post(f"/api/applications/{app_id}/analyze/").data
+        self.assertEqual(data["score"], 50)
+        self.assertIn("postgresql", data["missing"])
+
+    def test_requires_description(self):
+        self.set_skills("Python")
+        app_id = self.make_app("")
+        response = self.client.post(f"/api/applications/{app_id}/analyze/")
+        self.assertEqual(response.status_code, 400)
+
+    def test_requires_skills(self):
+        app_id = self.make_app("Python and Django")
+        response = self.client.post(f"/api/applications/{app_id}/analyze/")
+        self.assertEqual(response.status_code, 400)
+
+    def test_cannot_analyze_someone_elses_application(self):
+        self.set_skills("Python")
+        app_id = self.make_app("Python and Django")
+        other = User.objects.create_user("other", password="Tracker!2026pass")
+        self.client.force_authenticate(other)
+        response = self.client.post(f"/api/applications/{app_id}/analyze/")
+        self.assertEqual(response.status_code, 404)

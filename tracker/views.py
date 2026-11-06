@@ -1,3 +1,4 @@
+from .matching import analyze_match
 from django.db.models import Count
 from rest_framework import generics, permissions, viewsets
 from rest_framework.decorators import action
@@ -38,6 +39,19 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         result["total"] = sum(result.values())
         return Response(result)
 
+    @action(detail=True, methods=["post"])
+    def analyze(self, request, pk=None):
+        application = self.get_object()
+        if not application.job_description.strip():
+            return Response(
+                {"detail": "Add a job description to this application first."}, status=400
+            )
+        profile, _ = Profile.objects.get_or_create(user=request.user)
+        if not profile.skills.strip():
+            return Response(
+                {"detail": "Add your skills at /api/profile/ first."}, status=400
+            )
+        return Response(analyze_match(application.job_description, profile.skills))
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = ProfileSerializer
