@@ -26,3 +26,9 @@ class Application(models.Model):
 
     def __str__(self):
         return f"{self.role} at {self.company}"
+
+class Profile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
+    )
+    skills = models.TextField(blank=True)  # e.g. "Python, Django, REST APIs, Git"
