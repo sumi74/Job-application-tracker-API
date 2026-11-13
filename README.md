@@ -43,3 +43,14 @@ python manage.py test
 POST /api/applications/
 {"company": "Acme Ltd", "role": "Junior Backend Developer", "status": "applied"}
 ```
+
+
+## Live demo
+https://job-application-tracker-api-4jto.onrender.com/api/
+
+Hosted on Render's free tier, so the first request after a quiet period can take about a minute while the server wakes up. Data on the free tier may reset, so treat it as a demo.
+
+Try it:
+1. Create an account at `/api/register/`
+2. Log in at `/api-auth/login/`
+3. Add and view applications at `/api/applications/`
